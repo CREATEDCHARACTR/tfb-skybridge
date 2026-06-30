@@ -1,9 +1,16 @@
 {
   "name": "tfb-skybridge",
-  "version": "0.1.3",
-  "description": "Proof-carrying admission for third-party agent apps. The dev CLI: run the discriminator on your own code; verdict in milliseconds with the exact seed × payload × call site that caused any catch.",
+  "version": "0.1.4",
+  "description": "Proof-carrying admission for third-party agent apps. The dev CLI: run the discriminator on your own code; verdict in milliseconds with the exact seed \u00d7 payload \u00d7 call site that caused any catch.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CREATEDCHARACTR/tfb-skybridge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CREATEDCHARACTR/tfb-skybridge/issues"
+  },
   "author": {
     "name": "Saul Lowery",
     "email": "saul@projecttfb.com",
