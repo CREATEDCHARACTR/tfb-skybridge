@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TFB Skybridge — Host Platform</title>
+<!-- Pinned trust roots (stand-in for a root store, see README). Loaded
+     synchronously BEFORE any verifier code so window.TFB_TRUST_ROOTS is set. -->
+<script src="/config.js"></script>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; color: #16181d; background: #f5f6f8; }
+  header { padding: 20px 28px; border-bottom: 1px solid #e3e6ea; background: #fff; }
+  header h1 { margin: 0; font-size: 17px; letter-spacing: .2px; }
+  header p { margin: 4px 0 0; color: #6b7280; font-size: 13px; }
+  main { display: grid; grid-template-columns: 360px 1fr; gap: 0; min-height: calc(100vh - 70px); }
+  .rail { padding: 22px 24px; border-right: 1px solid #e3e6ea; background: #fafbfc; }
+  .stage { padding: 22px 28px; }
+  .card { background: #fff; border: 1px solid #e3e6ea; border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; }
+  .card h2 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: .8px; color: #8a94a3; }
+  .kv { font-size: 13px; margin: 3px 0; }
+  .kv b { font-weight: 600; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .policy { white-space: pre-wrap; word-break: break-word; background: #0f1115; color: #d7dde6; border-radius: 8px; padding: 10px 12px; font-size: 11.5px; line-height: 1.6; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .pill.ok { background: #e7f6ec; color: #137a3e; }
+  .pill.stop { background: #fdeaea; color: #b3261e; }
+  .frame-wrap { position: relative; border: 1px solid #e3e6ea; border-radius: 12px; overflow: hidden; background: #fff; height: 460px; }
+  iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .overlay { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 8px; background: rgba(179,38,30,.93); color: #fff; text-align: center; padding: 24px; }
+  .overlay.show { display: flex; }
+  .overlay h3 { margin: 0; font-size: 20px; }
+  .overlay p { margin: 0; font-size: 13px; opacity: .92; max-width: 460px; }
+  .muted { color: #8a94a3; font-size: 12px; }
+  .step { font-size: 12.5px; color: #4b5563; margin: 2px 0; }
+  .step.done::before { content: "✓ "; color: #137a3e; font-weight: 700; }
+  .group-label { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: #8a94a3; font-weight: 600; margin: 8px 0 3px; }
+  .group-label:first-of-type { margin-top: 4px; }
+  .strip { display: flex; flex-direction: column; gap: 8px; }
+  .strip-row { padding: 8px 10px; border-radius: 8px; border: 1px solid #e3e6ea; background: #fafbfc; }
+  .strip-row.admit { background: #f0faf3; border-color: #c9e9d4; }
+  .strip-row.warn { background: #fff7e3; border-color: #f0d585; }
+  .strip-row.reject { background: #fdedec; border-color: #ecb6b1; }
+  .strip-row .name { font-weight: 600; font-size: 12.5px; }
+  .strip-row .why { font-size: 11.5px; color: #4b5563; margin-top: 3px; }
+  .strip-row .badge { float: right; font-size: 11px; padding: 1px 7px; border-radius: 999px; font-weight: 600; }
+  .strip-row.admit .badge { background: #d1f0d9; color: #137a3e; }
+  .strip-row.warn .badge { background: #f6e0a0; color: #8a5b00; }
+  .strip-row.reject .badge { background: #f5cfca; color: #b3261e; }
+  .strip-footer { font-size: 11px; color: #8a94a3; margin-top: 8px; }
+  .dev-headline { padding: 10px 12px; background: #fdedec; border: 1px solid #ecb6b1; border-radius: 8px; font-size: 13px; color: #4b5563; line-height: 1.5; }
+  .dev-headline b { color: #b3261e; }
+  .dev-section { margin-top: 12px; }
+  .dev-section h4 { margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: #8a94a3; font-weight: 600; }
+  .dev-grid { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 12.5px; }
+  .dev-grid .k { color: #8a94a3; font-weight: 600; }
+  .dev-grid .v { color: #16181d; }
+  .dev-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; background: #0f1115; color: #d7dde6; border-radius: 6px; padding: 8px 10px; margin-top: 6px; white-space: pre-wrap; word-break: break-word; }
+  .dev-fix { padding: 8px 10px; background: #f0faf3; border: 1px solid #c9e9d4; border-radius: 8px; margin-top: 6px; font-size: 12.5px; }
+  .dev-fix .opt { font-weight: 600; color: #137a3e; }
+  .dev-fix .det { color: #4b5563; margin-top: 2px; }
+  .dev-fix .tradeoff { color: #8a94a3; margin-top: 2px; font-size: 11.5px; font-style: italic; }
+  .dev-compare { margin-top: 10px; padding: 10px 12px; background: #fafbfc; border: 1px solid #e3e6ea; border-radius: 8px; font-size: 12px; line-height: 1.5; color: #4b5563; }
+  .dev-compare .old { color: #b3261e; }
+  .dev-compare .new { color: #137a3e; }
+  .dev-compare .delta { margin-top: 4px; font-weight: 600; color: #16181d; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Host Platform</h1>
+  <p>Admitting a third-party agent app via a Skybridge certificate — verify, don't re-derive.</p>
+</header>
+<main>
+  <div class="rail">
+    <div class="card">
+      <h2>Admission</h2>
+      <div id="admit-body"><span class="muted">checking certificate…</span></div>
+    </div>
+    <div class="card">
+      <h2>Enforced policy (browser-enforced)</h2>
+      <div id="policy" class="policy muted">—</div>
+    </div>
+    <div class="card">
+      <h2>Client-side verification (SubtleCrypto)</h2>
+      <div id="client-body"><span class="muted">the server's admission is one opinion; this is your browser's independent verdict.</span></div>
+      <div style="margin-top:10px;">
+        <button id="client-verify" style="font:inherit;font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid #b9d3ff;background:#fff;color:#1750c4;cursor:pointer;">Verify in this browser</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>App admissions (at scale)</h2>
+      <div id="strip-body"><span class="muted">running the discriminator on three apps…</span></div>
+    </div>
+    <div class="card">
+      <h2>Developer submission view</h2>
+      <div id="dev-view-body"><span class="muted">simulating a developer's submission flow…</span></div>
+    </div>
+    <div class="card">
+      <h2>Pre-ship catch (battery)</h2>
+      <div id="battery-body"><span class="muted">running the adversarial battery…</span></div>
+    </div>
+    <div class="card">
+      <h2>Transparency log (auditable)</h2>
+      <div id="log-body"><span class="muted">loading log state…</span></div>
+      <div class="row" style="display:flex;gap:8px;margin-top:10px;">
+        <button id="log-refresh" style="font:inherit;font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid #d3d8df;background:#fff;cursor:pointer;">Refresh</button>
+        <button id="log-rewrite" style="font:inherit;font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid #e2b4b0;background:#fff;color:#b3261e;cursor:pointer;">Try to rewrite history</button>
+      </div>
+      <div id="rewrite-result" class="kv mono" style="margin-top:8px;"></div>
+    </div>
+    <div class="card">
+      <h2>Runtime status</h2>
+      <div id="status"><span class="pill ok" id="status-pill">RENDERING</span></div>
+      <div id="revocation" class="muted" style="margin-top:8px;">no revocation</div>
+      <div style="margin-top:10px;">
+        <button id="reset-session" style="font:inherit;font-size:12px;padding:6px 10px;border-radius:6px;border:1px solid #d3d8df;background:#fff;cursor:pointer;">Reset session</button>
+        <span class="muted" style="font-size:11px;margin-left:6px;">multiple visitors share state on the public demo; reset before/after your walk</span>
+      </div>
+    </div>
+    <div class="card">
+      <h2>What just happened</h2>
+      <div class="group-label">Core proof</div>
+      <div id="s1" class="step">1 · certificate verified cheaply (Tier B)</div>
+      <div id="s2" class="step">2 · app rendered under the certified CSP</div>
+      <div id="s3" class="step">3 · undeclared egress blocked by the browser</div>
+      <div id="s4" class="step">4 · admission revoked, logged, host stopped</div>
+      <div class="group-label">Strengthening evidence</div>
+      <div id="s5" class="step">declared external origin allowed (no violation)</div>
+    </div>
+  </div>
+  <div class="stage">
+    <div class="frame-wrap">
+      <iframe id="app" src="/app" title="third-party app" sandbox="allow-scripts allow-same-origin"></iframe>
+      <div class="overlay" id="overlay">
+        <h3>STOPPED — admission revoked</h3>
+        <p id="overlay-detail"></p>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:12px;">The app runs in a nested frame whose CSP is exactly what the certificate carried. The host added only its own control directives; it cannot grant the app more than the certificate did.</p>
+  </div>
+</main>
+
+<script src="/host.js"></script>
+<!-- The host page logic lives in /host.js (externalized in 0.1.3 to
+     drop 'unsafe-inline' from script-src; see Dev round-2 Q1 ruling).
+     The (previously inline) script body — admission load, postMessage
+     gate, log/decision/strip/battery loaders, SubtleCrypto verifier —
+     is now byte-stable in the artifact, covered by script-src 'self'. -->
+</body>
+</html>

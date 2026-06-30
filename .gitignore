@@ -1,0 +1,38 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output (rebuilt from src/ via npm run build)
+dist/
+
+# Release tarballs (only for local testing — published via npm)
+*.tgz
+
+# Runtime logs
+*.log
+skybridge.log
+skybridge.err.log
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python (in case TFBthumb side-by-side dev work)
+__pycache__/
+*.pyc
+.mypy_cache/
+
+# Local credentials (defensive — none currently)
+.env
+.env.local
+*.pem
+*.key

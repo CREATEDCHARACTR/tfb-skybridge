@@ -1,0 +1,10 @@
+{
+  "hosts": [
+    "api.stripe.com",
+    "metrics.acme.io"
+  ],
+  "directives": [
+    "connect-src"
+  ],
+  "capabilities": []
+}

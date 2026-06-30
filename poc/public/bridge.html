@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>TFB Skybridge — Bridge Frame</title>
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; }
+  iframe { width: 100%; height: 100vh; border: 0; display: block; }
+</style>
+</head>
+<body>
+  <iframe id="inner" src="__ORIGIN_INNER__/inner" title="third-party app (inner)" sandbox="allow-scripts allow-same-origin"></iframe>
+<!-- Bridge logic externalized in 0.1.3 to drop 'unsafe-inline' from script-src.
+     bridge-config.js exposes window.SKYBRIDGE_BRIDGE_CFG (deployment origins)
+     synchronously before bridge.js consumes them. -->
+<script src="/bridge-config.js"></script>
+<script src="/bridge.js"></script>
+</body>
+</html>

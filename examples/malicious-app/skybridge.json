@@ -1,0 +1,9 @@
+{
+  "hosts": [
+    "api.stripe.com"
+  ],
+  "directives": [
+    "connect-src"
+  ],
+  "capabilities": []
+}

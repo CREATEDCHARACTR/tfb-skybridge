@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Acme Checkout</title>
+<style>
+  body { margin: 0; font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; color: #16181d; padding: 28px; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  p.sub { color: #6b7280; font-size: 13px; margin: 0 0 20px; }
+  .row { display: flex; gap: 10px; margin: 16px 0; }
+  button { font: inherit; font-weight: 600; padding: 10px 16px; border-radius: 9px; border: 1px solid #d3d8df; background: #fff; cursor: pointer; }
+  button.primary { background: #1a7f4b; border-color: #1a7f4b; color: #fff; }
+  button.attack { background: #fff; border-color: #e2b4b0; color: #b3261e; }
+  button.declared { background: #fff; border-color: #b9d3ff; color: #1750c4; }
+  .log { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; background: #0f1115; color: #d7dde6; border-radius: 8px; padding: 12px 14px; margin-top: 16px; min-height: 90px; white-space: pre-wrap; }
+  .ok { color: #6ee7a0; }
+  .blocked { color: #ff9b94; }
+  .allowed { color: #9bbcff; }
+</style>
+</head>
+<body>
+  <h1>Acme Checkout</h1>
+  <p class="sub">A third-party agent app rendered inside the host.</p>
+
+  <div class="row">
+    <button class="primary" id="pay">Pay $42.00</button>
+    <button class="declared" id="declared">Try declared origin (api.stripe.com)</button>
+    <button class="attack" id="attack">Inject attack (exfiltrate)</button>
+  </div>
+
+  <div class="log" id="log">ready.</div>
+
+<!-- App logic externalized in 0.1.3 to drop 'unsafe-inline' from the
+     cert-derived script-src. inner/config.js exposes window.SKYBRIDGE_INNER_CFG
+     (the bridge origin) synchronously before inner/app.js consumes it.
+     The app.js artifact is now byte-stable across deployments — content-
+     addressable, witness-rehashable, foreclosing nothing in Q3's roadmap. -->
+<script src="/inner/config.js"></script>
+<script src="/inner/app.js"></script>
+</body>
+</html>

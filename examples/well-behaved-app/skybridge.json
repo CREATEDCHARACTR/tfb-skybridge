@@ -1,0 +1,15 @@
+{
+  "hosts": [
+    "api.stripe.com",
+    "js.stripe.com",
+    "realtime.acme.io",
+    "metrics.acme.io"
+  ],
+  "directives": [
+    "connect-src",
+    "script-src"
+  ],
+  "capabilities": [
+    "storage:scoped"
+  ]
+}
