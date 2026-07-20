@@ -50,12 +50,16 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "tsx test/harness.ts",
+    "test:drawbridge": "tsx test/drawbridge.ts",
+    "test:drawbridge-crash": "tsx test/drawbridge-crash.ts",
+    "test:drawbridge-privacy": "tsx test/drawbridge-privacy.ts",
+    "test:drawbridge-resource": "node --expose-gc --import tsx test/drawbridge-resource.ts",
     "demo": "tsx demo.ts",
     "poc": "tsx poc/server.ts",
     "check": "tsx bin/skybridge-cli.ts check",
     "build": "rm -rf dist && tsc -p tsconfig.build.json && node scripts/postbuild.mjs && chmod +x dist/bin/skybridge-cli.js",
     "verify:consumer-install": "node scripts/verify-consumer-install.mjs",
-    "prepublishOnly": "npm run typecheck && npm run test && npm run build && npm run verify:consumer-install"
+    "prepublishOnly": "npm run typecheck && npm run test && npm run test:drawbridge && npm run test:drawbridge-privacy && npm run test:drawbridge-resource && npm run test:drawbridge-crash && npm run build && npm run verify:consumer-install"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",

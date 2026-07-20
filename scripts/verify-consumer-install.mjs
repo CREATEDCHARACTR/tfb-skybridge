@@ -19,7 +19,7 @@ import { execFileSync, execSync } from "node:child_process";
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = join(__dirname, "..");
@@ -85,11 +85,36 @@ for (const { dir, code, label } of EXPECTED) {
   }
 }
 
-// (4) cleanup
+// (4) exercise the installed Drawbridge module seam under native Node ESM.
+try {
+  const installedRoot = join(sandbox, "node_modules", PKG_NAME, "dist", "src", "behavior", "extraction");
+  const producer = await import(pathToFileURL(join(installedRoot, "producer.js")).href);
+  const shadow = await import(pathToFileURL(join(installedRoot, "shadow.js")).href);
+  const produced = producer.produceInferenceObservation({
+    tenantId: "consumer-tenant",
+    sessionId: "consumer-session",
+    sequence: 1n,
+    rawQuery: "consumer install alpha beta gamma",
+    regionLabel: "consumer-region",
+  }, Buffer.alloc(32, 11));
+  if (!produced.ok || !produced.observation) throw new Error("producer_did_not_emit");
+  const observer = new shadow.ShadowExtractionObserver({ ttlMs: 1_000 });
+  const observed = observer.observe(produced.observation);
+  const closed = observer.close();
+  if (!observed.ok || !closed.ok || closed.metrics.retained_events_total !== 0) {
+    throw new Error("observer_lifecycle_failed");
+  }
+  step("✓ drawbridge modules → native ESM producer/observe/close");
+} catch (e) {
+  step(`✗ drawbridge modules → ${e.message}`);
+  failed++;
+}
+
+// (5) cleanup
 rmSync(sandbox, { recursive: true, force: true });
 rmSync(tarballPath, { force: true });
 
 if (failed > 0) {
-  die(`${failed}/${EXPECTED.length} examples did not produce the expected verdict from a real consumer install. Do NOT publish.`);
+  die(`${failed}/${EXPECTED.length + 1} consumer checks failed. Do NOT publish.`);
 }
-console.log(`verify-consumer-install: ALL ${EXPECTED.length}/${EXPECTED.length} pass. consumer install is real-world correct.`);
+console.log(`verify-consumer-install: ALL ${EXPECTED.length + 1}/${EXPECTED.length + 1} pass. consumer install is real-world correct.`);
