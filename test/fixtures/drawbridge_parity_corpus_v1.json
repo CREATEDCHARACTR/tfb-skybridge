@@ -1,0 +1,245 @@
+{
+  "schema": "tfb.drawbridge.cross_language_parity_corpus.v1",
+  "status": "FROZEN_FOR_REVIEW",
+  "semantic_authority": "typescript_shadow_extraction_observer",
+  "reference_implementation": "python_bounded_session_scorer",
+  "time_semantics": {
+    "mode": "fixed",
+    "now_ms": 0,
+    "typescript_ttl_ms": 3600000
+  },
+  "authority": {
+    "action_ceiling": "OBSERVE_ONLY",
+    "integration_authorized": false,
+    "activation_authorized": false,
+    "production_claim_authorized": false
+  },
+  "cases": [
+    {
+      "case_id": "same_region_component",
+      "coverage": ["same_regions"],
+      "config": {
+        "max_window": 8,
+        "max_candidates_per_observation": 8,
+        "hamming_threshold": 2,
+        "min_grid_size": 3,
+        "min_region_count": 2,
+        "max_partitions": 4
+      },
+      "observations": [
+        {"tenantToken": "0000000000000001", "sessionToken": "0000000000000010", "sequence": "0000000000000001", "querySimhash": "0000000000000000", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000001", "sessionToken": "0000000000000010", "sequence": "0000000000000002", "querySimhash": "0000000000000001", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000001", "sessionToken": "0000000000000010", "sequence": "0000000000000003", "querySimhash": "0000000000000003", "regionToken": "0000000000000001"}
+      ],
+      "expected": [
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 2, "region_count": 1},
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "region_spread_below_floor", "grid_size": 3, "region_count": 1}
+      ]
+    },
+    {
+      "case_id": "different_region_component",
+      "coverage": ["different_regions"],
+      "config": {
+        "max_window": 8,
+        "max_candidates_per_observation": 8,
+        "hamming_threshold": 2,
+        "min_grid_size": 3,
+        "min_region_count": 2,
+        "max_partitions": 4
+      },
+      "observations": [
+        {"tenantToken": "0000000000000001", "sessionToken": "0000000000000020", "sequence": "0000000000000001", "querySimhash": "0000000000000000", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000001", "sessionToken": "0000000000000020", "sequence": "0000000000000002", "querySimhash": "0000000000000001", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000001", "sessionToken": "0000000000000020", "sequence": "0000000000000003", "querySimhash": "0000000000000003", "regionToken": "0000000000000002"}
+      ],
+      "expected": [
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 2, "region_count": 1},
+        {"ok": true, "errors": [], "status": "CANDIDATE_EVIDENCE", "reason": "region_spread_candidate_observed", "grid_size": 3, "region_count": 2}
+      ]
+    },
+    {
+      "case_id": "exact_repeat_is_not_an_edge",
+      "coverage": ["exact_repeats"],
+      "config": {
+        "max_window": 4,
+        "max_candidates_per_observation": 4,
+        "hamming_threshold": 64,
+        "min_grid_size": 2,
+        "min_region_count": 1,
+        "max_partitions": 2
+      },
+      "observations": [
+        {"tenantToken": "0000000000000002", "sessionToken": "0000000000000030", "sequence": "0000000000000001", "querySimhash": "000000000000000a", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000002", "sessionToken": "0000000000000030", "sequence": "0000000000000002", "querySimhash": "000000000000000a", "regionToken": "ffffffffffffffff"}
+      ],
+      "expected": [
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1}
+      ]
+    },
+    {
+      "case_id": "hamming_boundary",
+      "coverage": ["boundary_hamming", "partitions"],
+      "config": {
+        "max_window": 8,
+        "max_candidates_per_observation": 8,
+        "hamming_threshold": 2,
+        "min_grid_size": 2,
+        "min_region_count": 1,
+        "max_partitions": 4
+      },
+      "observations": [
+        {"tenantToken": "0000000000000003", "sessionToken": "0000000000000040", "sequence": "0000000000000001", "querySimhash": "0000000000000000", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000003", "sessionToken": "0000000000000040", "sequence": "0000000000000002", "querySimhash": "0000000000000003", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000003", "sessionToken": "0000000000000041", "sequence": "0000000000000001", "querySimhash": "0000000000000000", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000003", "sessionToken": "0000000000000041", "sequence": "0000000000000002", "querySimhash": "0000000000000007", "regionToken": "0000000000000001"}
+      ],
+      "expected": [
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": true, "errors": [], "status": "CANDIDATE_EVIDENCE", "reason": "region_spread_candidate_observed", "grid_size": 2, "region_count": 1},
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1}
+      ]
+    },
+    {
+      "case_id": "tenant_and_session_partitions",
+      "coverage": ["partitions"],
+      "config": {
+        "max_window": 8,
+        "max_candidates_per_observation": 8,
+        "hamming_threshold": 64,
+        "min_grid_size": 2,
+        "min_region_count": 1,
+        "max_partitions": 4
+      },
+      "observations": [
+        {"tenantToken": "0000000000000011", "sessionToken": "0000000000000050", "sequence": "0000000000000001", "querySimhash": "0000000000000000", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000012", "sessionToken": "0000000000000050", "sequence": "0000000000000002", "querySimhash": "0000000000000001", "regionToken": "0000000000000002"},
+        {"tenantToken": "0000000000000011", "sessionToken": "0000000000000050", "sequence": "0000000000000002", "querySimhash": "ffffffffffffffff", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000012", "sessionToken": "0000000000000050", "sequence": "0000000000000003", "querySimhash": "0000000000000002", "regionToken": "0000000000000002"}
+      ],
+      "expected": [
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": true, "errors": [], "status": "CANDIDATE_EVIDENCE", "reason": "region_spread_candidate_observed", "grid_size": 2, "region_count": 1},
+        {"ok": true, "errors": [], "status": "CANDIDATE_EVIDENCE", "reason": "region_spread_candidate_observed", "grid_size": 2, "region_count": 1}
+      ]
+    },
+    {
+      "case_id": "window_eviction",
+      "coverage": ["window_eviction"],
+      "config": {
+        "max_window": 3,
+        "max_candidates_per_observation": 3,
+        "hamming_threshold": 1,
+        "min_grid_size": 2,
+        "min_region_count": 1,
+        "max_partitions": 2
+      },
+      "observations": [
+        {"tenantToken": "0000000000000004", "sessionToken": "0000000000000060", "sequence": "0000000000000001", "querySimhash": "0000000000000000", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000004", "sessionToken": "0000000000000060", "sequence": "0000000000000002", "querySimhash": "0000000000000001", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000004", "sessionToken": "0000000000000060", "sequence": "0000000000000003", "querySimhash": "0000000000000002", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000004", "sessionToken": "0000000000000060", "sequence": "0000000000000004", "querySimhash": "0000000000000007", "regionToken": "0000000000000001"}
+      ],
+      "expected": [
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": true, "errors": [], "status": "CANDIDATE_EVIDENCE", "reason": "region_spread_candidate_observed", "grid_size": 2, "region_count": 1},
+        {"ok": true, "errors": [], "status": "CANDIDATE_EVIDENCE", "reason": "region_spread_candidate_observed", "grid_size": 3, "region_count": 1},
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1}
+      ]
+    },
+    {
+      "case_id": "candidate_eviction",
+      "coverage": ["candidate_eviction"],
+      "config": {
+        "max_window": 5,
+        "max_candidates_per_observation": 2,
+        "hamming_threshold": 1,
+        "min_grid_size": 2,
+        "min_region_count": 1,
+        "max_partitions": 2
+      },
+      "observations": [
+        {"tenantToken": "0000000000000005", "sessionToken": "0000000000000070", "sequence": "0000000000000001", "querySimhash": "0000000000000000", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000005", "sessionToken": "0000000000000070", "sequence": "0000000000000002", "querySimhash": "ffffffffffffffff", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000005", "sessionToken": "0000000000000070", "sequence": "0000000000000003", "querySimhash": "fffffffffffffffe", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000005", "sessionToken": "0000000000000070", "sequence": "0000000000000004", "querySimhash": "0000000000000001", "regionToken": "0000000000000001"}
+      ],
+      "expected": [
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": true, "errors": [], "status": "CANDIDATE_EVIDENCE", "reason": "region_spread_candidate_observed", "grid_size": 2, "region_count": 1},
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1}
+      ]
+    },
+    {
+      "case_id": "partition_lru_eviction",
+      "coverage": ["partition_eviction"],
+      "config": {
+        "max_window": 4,
+        "max_candidates_per_observation": 4,
+        "hamming_threshold": 64,
+        "min_grid_size": 2,
+        "min_region_count": 1,
+        "max_partitions": 2
+      },
+      "observations": [
+        {"tenantToken": "0000000000000021", "sessionToken": "0000000000000080", "sequence": "0000000000000001", "querySimhash": "0000000000000000", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000022", "sessionToken": "0000000000000080", "sequence": "0000000000000001", "querySimhash": "0000000000000001", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000023", "sessionToken": "0000000000000080", "sequence": "0000000000000001", "querySimhash": "0000000000000002", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000021", "sessionToken": "0000000000000080", "sequence": "0000000000000001", "querySimhash": "0000000000000003", "regionToken": "0000000000000001"}
+      ],
+      "expected": [
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1}
+      ]
+    },
+    {
+      "case_id": "uint64_extremes",
+      "coverage": ["uint64_extremes"],
+      "config": {
+        "max_window": 4,
+        "max_candidates_per_observation": 4,
+        "hamming_threshold": 64,
+        "min_grid_size": 2,
+        "min_region_count": 2,
+        "max_partitions": 2
+      },
+      "observations": [
+        {"tenantToken": "0000000000000000", "sessionToken": "ffffffffffffffff", "sequence": "0000000000000000", "querySimhash": "0000000000000000", "regionToken": "0000000000000000"},
+        {"tenantToken": "0000000000000000", "sessionToken": "ffffffffffffffff", "sequence": "ffffffffffffffff", "querySimhash": "ffffffffffffffff", "regionToken": "ffffffffffffffff"}
+      ],
+      "expected": [
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": true, "errors": [], "status": "CANDIDATE_EVIDENCE", "reason": "region_spread_candidate_observed", "grid_size": 2, "region_count": 2}
+      ]
+    },
+    {
+      "case_id": "monotonic_rejection",
+      "coverage": ["monotonic_rejection", "failure_state"],
+      "config": {
+        "max_window": 4,
+        "max_candidates_per_observation": 4,
+        "hamming_threshold": 64,
+        "min_grid_size": 2,
+        "min_region_count": 1,
+        "max_partitions": 2
+      },
+      "observations": [
+        {"tenantToken": "0000000000000006", "sessionToken": "0000000000000090", "sequence": "0000000000000002", "querySimhash": "0000000000000000", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000006", "sessionToken": "0000000000000090", "sequence": "0000000000000001", "querySimhash": "0000000000000001", "regionToken": "0000000000000001"},
+        {"tenantToken": "0000000000000006", "sessionToken": "0000000000000090", "sequence": "0000000000000003", "querySimhash": "0000000000000001", "regionToken": "0000000000000001"}
+      ],
+      "expected": [
+        {"ok": true, "errors": [], "status": "INSUFFICIENT_EVIDENCE", "reason": "grid_size_below_floor", "grid_size": 1, "region_count": 1},
+        {"ok": false, "errors": ["sequence_not_monotonic"], "status": "INSUFFICIENT_EVIDENCE", "reason": "sequence_not_monotonic", "grid_size": null, "region_count": null},
+        {"ok": true, "errors": [], "status": "CANDIDATE_EVIDENCE", "reason": "region_spread_candidate_observed", "grid_size": 2, "region_count": 1}
+      ]
+    }
+  ]
+}

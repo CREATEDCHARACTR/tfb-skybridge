@@ -15,8 +15,8 @@
 // prepublishOnly chain AND two independent persona audits because no layer
 // reproduced the node_modules constraint. Wiring 0.1.2 closes that class.
 
-import { execFileSync, execSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -31,25 +31,43 @@ const EXPECTED = [
   { dir: "malicious-app",    code: 2, label: "REJECT-pre-ship" },
 ];
 
+const cleanupPaths = [];
+process.on("exit", () => {
+  for (const path of cleanupPaths.reverse()) rmSync(path, { recursive: true, force: true });
+});
+
 function step(s) { process.stdout.write(`  ${s}\n`); }
 function die(s) { process.stderr.write(`\nverify-consumer-install: FAIL — ${s}\n`); process.exit(1); }
 
 console.log("verify-consumer-install: simulating a real consumer install + run");
 
-// (1) pack the current source into a tarball
-step("packing current source");
+// (1) rebuild and pack the current source into a tarball. The explicit build
+// makes this gate independent of stale ignored dist bytes; --ignore-scripts
+// keeps npm's lifecycle chatter from corrupting its documented JSON result.
+step("building fresh distributable bytes");
 let tarballName;
+const npmCacheRoot = mkdtempSync(join(tmpdir(), "skybridge-npm-cache-"));
+cleanupPaths.push(npmCacheRoot);
+const npmEnv = { ...process.env, npm_config_cache: npmCacheRoot };
 try {
+  execFileSync("npm", ["run", "build"], {
+    cwd: PKG_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env: npmEnv,
+  });
+  step("packing rebuilt source");
   // `npm pack --json` returns an array; the first entry's .filename is the tarball name
-  const out = execSync("npm pack --json", { cwd: PKG_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+  const out = execFileSync("npm", ["pack", "--json", "--ignore-scripts"], {
+    cwd: PKG_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], env: npmEnv,
+  });
   tarballName = JSON.parse(out)[0].filename;
 } catch (e) {
   die(`npm pack failed: ${e.message}`);
 }
 const tarballPath = join(PKG_ROOT, tarballName);
+cleanupPaths.push(tarballPath);
 
 // (2) clean install into a fresh /tmp dir
 const sandbox = mkdtempSync(join(tmpdir(), "skybridge-consumer-"));
+cleanupPaths.push(sandbox);
 step(`installing into ${sandbox}`);
 writeFileSync(join(sandbox, "package.json"), JSON.stringify({
   name: "consumer-install-test",
@@ -58,8 +76,8 @@ writeFileSync(join(sandbox, "package.json"), JSON.stringify({
   type: "module",
 }, null, 2));
 try {
-  execSync(`npm install "${tarballPath}" --no-audit --no-fund --silent`, {
-    cwd: sandbox, stdio: ["ignore", "pipe", "pipe"],
+  execFileSync("npm", ["install", tarballPath, "--omit=dev", "--no-audit", "--no-fund", "--silent"], {
+    cwd: sandbox, stdio: ["ignore", "pipe", "pipe"], env: npmEnv,
   });
 } catch (e) {
   die(`npm install failed: ${e.message}`);
@@ -110,11 +128,37 @@ try {
   failed++;
 }
 
-// (5) cleanup
+// (5) execute the installed Drawbridge CLI through the package's real bin.
+// This must not depend on the source-only `tsx` devDependency.
+try {
+  const installedPackage = JSON.parse(readFileSync(join(sandbox, "node_modules", PKG_NAME, "package.json"), "utf8"));
+  if (installedPackage.bin?.["tfb-drawbridge"] !== "dist/src/drawbridge-runtime/cli.js"
+    || installedPackage.scripts?.["drawbridge:serve"] !== "node dist/src/drawbridge-runtime/cli.js serve"
+    || installedPackage.scripts?.["drawbridge:agent"] !== "node dist/src/drawbridge-runtime/cli.js"
+    || installedPackage.scripts?.["drawbridge:janitor"] !== "node dist/src/drawbridge-runtime/cli.js retention-sweep") {
+    throw new Error("drawbridge_package_entry_contract_invalid");
+  }
+  if (existsSync(join(sandbox, "node_modules", "tsx"))) {
+    throw new Error("drawbridge_consumer_unexpected_dev_only_tsx");
+  }
+  const help = execFileSync("npm", ["exec", "--", "tfb-drawbridge", "--help"], {
+    cwd: sandbox, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], env: npmEnv,
+  });
+  if (!help.includes("TFB Drawbridge · OBSERVE_ONLY demo") || !help.includes("No command calls a model provider.")) {
+    throw new Error(`drawbridge_cli_help_contract_invalid:${JSON.stringify(help.slice(0, 500))}`);
+  }
+  step("✓ Drawbridge CLI → documented npm exec invocation, native Node, dev dependencies omitted");
+} catch (e) {
+  step(`✗ Drawbridge CLI → ${e.message}`);
+  failed++;
+}
+
+// (6) cleanup
 rmSync(sandbox, { recursive: true, force: true });
 rmSync(tarballPath, { force: true });
+rmSync(npmCacheRoot, { recursive: true, force: true });
 
 if (failed > 0) {
-  die(`${failed}/${EXPECTED.length + 1} consumer checks failed. Do NOT publish.`);
+  die(`${failed}/${EXPECTED.length + 2} consumer checks failed. Do NOT publish.`);
 }
-console.log(`verify-consumer-install: ALL ${EXPECTED.length + 1}/${EXPECTED.length + 1} pass. consumer install is real-world correct.`);
+console.log(`verify-consumer-install: ALL ${EXPECTED.length + 2}/${EXPECTED.length + 2} pass. consumer install is real-world correct.`);

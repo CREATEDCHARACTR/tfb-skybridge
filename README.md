@@ -11,6 +11,24 @@ skybridge check ./my-app
 
 [Live demo · projecttfb.com/skybridge/](https://www.projecttfb.com/skybridge/)
 
+## Drawbridge OBSERVE_ONLY runtime
+
+This package also ships the compiled `tfb-drawbridge` command for the bounded
+Drawbridge demonstration. It uses an external ChatGPT-agent custody exchange,
+does not call a local model or model-provider transport, and grants no policy,
+integration, activation, or production authority.
+
+```bash
+npm install tfb-skybridge
+npm exec -- tfb-drawbridge --help
+npm exec -- tfb-drawbridge serve --token-file /absolute/path/to/owner-only-agent-token
+```
+
+The token file must be an owner-held, single-link `0600` regular file. The
+runtime never prints its value. See `src/drawbridge-runtime/README.md` for the
+response workflow, independent retention-sweep command, retention boundary, and
+verification commands.
+
 ---
 
 ## What it does

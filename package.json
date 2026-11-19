@@ -34,7 +34,8 @@
   ],
   "bin": {
     "tfb-skybridge": "dist/bin/skybridge-cli.js",
-    "skybridge": "dist/bin/skybridge-cli.js"
+    "skybridge": "dist/bin/skybridge-cli.js",
+    "tfb-drawbridge": "dist/src/drawbridge-runtime/cli.js"
   },
   "files": [
     "dist/",
@@ -49,17 +50,24 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "tsx test/harness.ts",
-    "test:drawbridge": "tsx test/drawbridge.ts",
-    "test:drawbridge-crash": "tsx test/drawbridge-crash.ts",
-    "test:drawbridge-privacy": "tsx test/drawbridge-privacy.ts",
+    "test": "node --import tsx test/harness.ts",
+    "test:drawbridge": "node --import tsx test/drawbridge.ts",
+    "test:drawbridge-crash": "node --import tsx test/drawbridge-crash.ts",
+    "test:drawbridge-privacy": "node --import tsx test/drawbridge-privacy.ts",
     "test:drawbridge-resource": "node --expose-gc --import tsx test/drawbridge-resource.ts",
+    "test:drawbridge-e2e": "node --import tsx test/drawbridge-e2e.ts",
+    "test:drawbridge-parity": "node --import tsx test/drawbridge-parity.ts",
+    "test:drawbridge-ui": "node --import tsx test/drawbridge-ui.ts",
+    "drawbridge:serve": "node dist/src/drawbridge-runtime/cli.js serve",
+    "drawbridge:agent": "node dist/src/drawbridge-runtime/cli.js",
+    "drawbridge:janitor": "node dist/src/drawbridge-runtime/cli.js retention-sweep",
     "demo": "tsx demo.ts",
     "poc": "tsx poc/server.ts",
     "check": "tsx bin/skybridge-cli.ts check",
-    "build": "rm -rf dist && tsc -p tsconfig.build.json && node scripts/postbuild.mjs && chmod +x dist/bin/skybridge-cli.js",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && node scripts/postbuild.mjs && chmod +x dist/bin/skybridge-cli.js dist/src/drawbridge-runtime/cli.js",
+    "prepack": "npm run build",
     "verify:consumer-install": "node scripts/verify-consumer-install.mjs",
-    "prepublishOnly": "npm run typecheck && npm run test && npm run test:drawbridge && npm run test:drawbridge-privacy && npm run test:drawbridge-resource && npm run test:drawbridge-crash && npm run build && npm run verify:consumer-install"
+    "prepublishOnly": "npm run typecheck && npm run test && npm run test:drawbridge && npm run test:drawbridge-e2e && npm run test:drawbridge-ui && npm run test:drawbridge-parity && npm run test:drawbridge-privacy && npm run test:drawbridge-resource && npm run test:drawbridge-crash && npm run build && npm run verify:consumer-install"
   },
   "devDependencies": {
     "@types/node": "^22.9.0",
